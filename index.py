@@ -1,0 +1,48 @@
+# Upload gambar baru dulu (jika belum)
+from google.colab import files
+uploaded = files.upload()
+
+# Load & proses gambar
+import cv2
+import numpy as np
+import matplotlib.pyplot as plt
+
+for filename in uploaded.keys():
+    image = cv2.imread('image.jpg')
+
+gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+# Blur sebelum Otsu
+blur = cv2.GaussianBlur(gray, (5, 5), 0)
+
+# Otsu Thresholding
+_, otsu_thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+# Invers hasil Otsu
+otsu_thresh_inv = cv2.bitwise_not(otsu_thresh)
+
+# Evaluasi
+mse = np.mean((gray.astype("float") - otsu_thresh_inv.astype("float")) ** 2)
+psnr = cv2.PSNR(gray, otsu_thresh_inv)
+
+# Tampilkan
+plt.figure(figsize=(15, 5))
+plt.subplot(1, 3, 1)
+plt.imshow(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+plt.title('Original Image')
+plt.axis('off')
+
+plt.subplot(1, 3, 2)
+plt.imshow(gray, cmap='gray')
+plt.title('Grayscale')
+plt.axis('off')
+
+plt.subplot(1, 3, 3)
+plt.imshow(otsu_thresh_inv, cmap='gray')
+plt.title('Otsu Thresholding (Inverted)')
+plt.axis('off')
+plt.show()
+
+# Output evaluasi
+print(f"Mean Squared Error (MSE): {mse:.2f}")
+print(f"Peak Signal-to-Noise Ratio (PSNR): {psnr:.2f} dB")
